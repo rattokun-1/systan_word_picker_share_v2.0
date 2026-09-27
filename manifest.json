@@ -1,0 +1,26 @@
+{
+  "name": "シス単マスター",
+  "short_name": "シス単",
+  "description": "システム英単語 5訂版 学習サポートツール",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f6fb",
+  "theme_color": "#c9a227",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "assets/icons/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
