@@ -72,7 +72,6 @@ if (messaging) messaging.onMessage(payload => {
 
 const MAINTENANCE_SETTINGS_COLLECTION = 'appSettings';
 const MAINTENANCE_SETTINGS_DOC = 'global';
-const MAINTENANCE_ADMIN_BYPASS_PARAM = 'admin';
 // update.htmlでアプリ更新・Cookie/キャッシュ削除が完了した端末だけ、
 // 現在のメンテナンスを自動解除して通常画面へ戻します。
 const MAINTENANCE_RELEASE_ID = '2026.05.09-update-cleanup-1';
@@ -86,14 +85,6 @@ function isMaintenanceCleanupDoneForDevice(settings) {
   try {
     const requiredId = getMaintenanceReleaseId(settings);
     return localStorage.getItem(MAINTENANCE_CLEANUP_DONE_KEY) === requiredId;
-  } catch (e) {
-    return false;
-  }
-}
-
-function isMaintenanceAdminBypassUrl() {
-  try {
-    return new URLSearchParams(location.search).get(MAINTENANCE_ADMIN_BYPASS_PARAM) === '1';
   } catch (e) {
     return false;
   }
@@ -143,12 +134,8 @@ async function enforceMaintenanceMode() {
   const user = await waitForAuthReady();
   const adminByEmail = user && ADMIN_EMAILS.map(v => String(v).toLowerCase()).includes(String(user.email || '').toLowerCase());
   const adminByUid = user && ADMIN_UIDS.includes(user.uid);
-  const bypass = isMaintenanceAdminBypassUrl();
 
-  if (adminByEmail || adminByUid || bypass) {
-    if (bypass && !user) {
-      setTimeout(() => showSyncStatus('管理者ログイン後、設定からメンテナンスをOFFにできます'), 800);
-    }
+  if (adminByEmail || adminByUid) {
     return false;
   }
 
@@ -2950,9 +2937,12 @@ async function loadTeacherDashboard(profile = {}) {
   body.innerHTML = '<div class="school-muted">先生用データを読み込み中...</div>';
   try {
     const schoolCode = normalizeSchoolCode(profile.schoolCode || getSchoolCode() || '');
+    const usersQuery = schoolCode
+      ? db.collection('users').where('schoolCode', '==', schoolCode).limit(500).get().catch(() => null)
+      : Promise.resolve(null);
     const [rankingSnap, usersSnap, codesSnap] = await Promise.all([
       db.collection('rankings').limit(500).get().catch(() => null),
-      db.collection('users').limit(500).get().catch(() => null),
+      usersQuery,
       db.collection('schoolCodes').limit(200).get().catch(() => null)
     ]);
     let rankingRows = rankingSnap && rankingSnap.docs ? rankingSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) : [];

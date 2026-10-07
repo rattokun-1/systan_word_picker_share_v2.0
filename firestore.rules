@@ -65,10 +65,12 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    // 学校単位の学習通知。内容は学校IDを知る利用者向けに公開。
+    // 学校単位の学習通知。所属学校の認証済みユーザーだけ閲覧可。
     // 生徒からの通知の偽造を防ぐため、作成はCloud Functionsのみ。
     match /schoolNotices/{noticeId} {
-      allow read: if true;
+      allow read: if signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.schoolCode == resource.data.schoolId;
       allow write: if false;
     }
 
@@ -98,9 +100,11 @@ service cloud.firestore {
 
     // ユーザープロフィール。
     // 本人は通常プロフィールのみ変更可。role / disabledInApp / note は管理者のみ変更可。
-    // 先生は先生用ページで閲覧のみ可能。
+    // 先生は所属学校のプロフィールだけ閲覧可能。
     match /users/{uid} {
-      allow read: if isOwner(uid) || isAdmin() || isTeacher();
+      allow read: if isOwner(uid) || isAdmin()
+        || (isTeacher()
+          && resource.data.schoolCode == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.schoolCode);
       allow create: if isAdmin() || (isOwner(uid) && ownerCreateSafe());
       allow update: if isAdmin() || (isOwner(uid) && ownerCannotChangeAdminFields());
       allow delete: if isAdmin() || isOwner(uid);
