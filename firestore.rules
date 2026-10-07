@@ -33,6 +33,15 @@ service cloud.firestore {
       ]);
     }
 
+    function ownerCanChangeSchoolCode() {
+      return request.resource.data.schoolCode == resource.data.schoolCode
+        || request.resource.data.schoolCode == null
+        || (resource.data.schoolCode == null
+          && request.resource.data.schoolCode is string
+          && exists(/databases/$(database)/documents/schoolCodes/$(request.resource.data.schoolCode))
+          && get(/databases/$(database)/documents/schoolCodes/$(request.resource.data.schoolCode)).data.active != false);
+    }
+
     function ownerCreateSafe() {
       return !request.resource.data.keys().hasAny([
         'role',
@@ -52,9 +61,11 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    // 学校・クラス参加コード：コード確認のため閲覧可。発行・停止・削除は管理者のみ。
+    // 学校・クラス参加コード：参加コードを知る利用者は単一コードを確認可。
+    // 一覧取得・発行・停止・削除は管理者のみ。
     match /schoolCodes/{code} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
 
@@ -81,10 +92,15 @@ service cloud.firestore {
 
     // インストール済みPWA通知用トークン。
     match /pushTokens/{clientId} {
-      allow create, update: if request.resource.data.clientId == clientId
+      allow create, update: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.clientId == clientId
         && request.resource.data.installedOnly == true
         && request.resource.data.token is string
-        && request.resource.data.token.size() > 20;
+        && request.resource.data.token.size() > 20
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && request.resource.data.schoolId
+          == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.schoolCode;
       allow read, delete: if isAdmin();
     }
 
@@ -105,8 +121,14 @@ service cloud.firestore {
       allow read: if isOwner(uid) || isAdmin()
         || (isTeacher()
           && resource.data.schoolCode == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.schoolCode);
-      allow create: if isAdmin() || (isOwner(uid) && ownerCreateSafe());
-      allow update: if isAdmin() || (isOwner(uid) && ownerCannotChangeAdminFields());
+      allow create: if isAdmin() || (isOwner(uid) && ownerCreateSafe()
+        && (request.resource.data.schoolCode == null
+          || (request.resource.data.schoolCode is string
+            && exists(/databases/$(database)/documents/schoolCodes/$(request.resource.data.schoolCode))
+            && get(/databases/$(database)/documents/schoolCodes/$(request.resource.data.schoolCode)).data.active != false)));
+      allow update: if isAdmin() || (isOwner(uid)
+        && ownerCannotChangeAdminFields()
+        && ownerCanChangeSchoolCode());
       allow delete: if isAdmin() || isOwner(uid);
     }
 
