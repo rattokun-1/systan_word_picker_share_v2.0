@@ -13,12 +13,18 @@
 <body class="login-page google-login-page">
   <main class="google-login-shell">
     <a class="login-back-link" href="./index.html">← 学習画面に戻る</a>
-    <section class="google-login-card" aria-labelledby="login-title">
-      <div class="login-brand-mark" aria-hidden="true">S</div>
+    <section class="google-login-card login-flow-card" aria-labelledby="login-title">
+      <header class="login-flow-header">
+        <div class="login-brand-mark" aria-hidden="true">S</div>
+        <div>
+          <span class="login-flow-eyebrow">Systan Master</span>
+          <p class="login-flow-caption">学習を続ける</p>
+        </div>
+      </header>
 
       <div id="email-step" class="login-step">
         <h1 id="login-title">ログイン</h1>
-        <p class="google-login-subtitle">メールアドレスまたは学校IDで続ける</p>
+        <p class="google-login-subtitle">メールアドレスまたは学校IDでログイン</p>
         <form id="email-form" novalidate>
           <label class="google-field-label" for="email-input">メールアドレス / 学校ID</label>
           <input id="email-input" class="google-login-input" type="text" autocomplete="username" inputmode="text" required placeholder="メールアドレスまたは学校ID">
@@ -131,6 +137,7 @@
         'auth/network-request-failed': 'ネットワーク接続を確認して、もう一度お試しください。',
         'auth/credential-already-in-use': 'このメールアドレスは別のアカウントで使用中です。ログイン後、マイページで学校IDを登録してください。',
         'permission-denied': 'Firebaseの権限設定により拒否されました。Firestoreルールとログイン状態を確認してください。',
+        'school-profile-link-failed': '学校IDは確認できましたが、アカウントとの紐づけに失敗しました。もう一度お試しください。',
         'school-not-found': '学校IDを確認してください。',
         'class-not-found': 'クラスIDを確認してください。'
       };
@@ -291,8 +298,9 @@
         const schoolName = String(school.schoolName || school.name || '').trim().slice(0, 40);
         schoolSession = { schoolId, schoolName };
         await attachSchoolToCurrentUser();
-        const logo = typeof school.schoolLogoData === 'string' && school.schoolLogoData.length <= 260000 && /^data:image\/webp;base64,[A-Za-z0-9+/]+=*$/.test(school.schoolLogoData) ? school.schoolLogoData : '';
+        const logo = normalizeSchoolLogo(school.schoolLogoData);
         if (logo) localStorage.setItem('systan_school_logo_v1_' + schoolId, logo);
+        else localStorage.removeItem('systan_school_logo_v1_' + schoolId);
         const range = school;
         const startId = Number(range.startId), endId = Number(range.endId);
         const validRange = Number.isInteger(startId) && Number.isInteger(endId) && startId >= 1 && endId <= 2027 && startId <= endId;
@@ -310,6 +318,12 @@
         showStep('school-success-step');
       });
     });
+    function normalizeSchoolLogo(value) {
+      return typeof value === 'string'
+        && value.length <= 260000
+        && /^data:image\/(?:webp|png|jpeg);base64,[A-Za-z0-9+/]+=*$/.test(value)
+        ? value : '';
+    }
     $('school-continue').addEventListener('click', finish);
     $('school-email-link').addEventListener('click', () => showStep('email-step'));
   </script>

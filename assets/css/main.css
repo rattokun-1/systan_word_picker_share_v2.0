@@ -5940,18 +5940,31 @@ body.is-studying > footer { display:none !important; }
 }
 .app-header { min-height:78px; }
 body.page-scrolled .app-header { min-height:58px; padding-block:9px; background:rgba(255,255,255,.78); box-shadow:0 8px 24px rgba(34,52,78,.12), inset 0 1px rgba(255,255,255,.95); }
-.school-brand-logo-frame,.school-login-logo {
-  width:100%;
-  height:96px;
+.school-brand-logo-frame {
+  display:inline-grid;
+  width:min(42vw,180px);
+  height:48px;
   display:grid;
   place-items:center;
   overflow:hidden;
-  border-radius:18px;
+  border-radius:12px;
   background:rgba(255,255,255,.46);
   border:1px solid rgba(255,255,255,.75);
   box-shadow:inset 0 1px rgba(255,255,255,.92);
 }
-.school-brand-logo-frame img,.school-login-logo img { display:block; width:100%; height:100%; max-width:100%; max-height:100%; object-fit:contain; object-position:center; padding:10px; }
+.school-brand-logo-frame img { display:block; width:100%; height:100%; max-width:100%; max-height:100%; object-fit:contain; object-position:center; padding:4px 8px; }
+.school-login-logo {
+  width:100%;
+  height:56px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  border-radius:13px;
+  background:rgba(255,255,255,.46);
+  border:1px solid rgba(255,255,255,.75);
+  box-shadow:inset 0 1px rgba(255,255,255,.92);
+}
+.school-login-logo img { display:block; width:100%; height:100%; max-width:100%; max-height:100%; object-fit:contain; object-position:center; padding:4px 10px; }
 
 /* Login experience: glass card, visible school entry and async loading state. */
 .google-login-page {
@@ -5970,6 +5983,10 @@ body.page-scrolled .app-header { min-height:58px; padding-block:9px; background:
   -webkit-backdrop-filter:blur(28px) saturate(155%);
   backdrop-filter:blur(28px) saturate(155%);
 }
+.login-flow-header { display:flex; align-items:center; justify-content:center; gap:11px; margin-bottom:24px; text-align:left; }
+.login-flow-header .login-brand-mark { flex:0 0 auto; margin:0; width:42px; height:42px; border-radius:13px; font-size:21px; }
+.login-flow-eyebrow { display:block; color:#957323; font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
+.login-flow-caption { margin:3px 0 0; color:#5f6368; font-size:12px; }
 .google-login-card .google-primary-button,.google-login-card .google-provider-button { min-height:52px; border-radius:14px; box-shadow:0 8px 20px rgba(30,66,120,.1); transition:transform .18s ease, box-shadow .18s ease, filter .18s ease; }
 .google-login-card .google-primary-button:hover,.google-login-card .google-provider-button:hover { transform:translateY(-1px); box-shadow:0 12px 26px rgba(30,66,120,.16); filter:saturate(1.08); }
 .google-school-cta {
@@ -6001,6 +6018,7 @@ body.page-scrolled .app-header { min-height:58px; padding-block:9px; background:
 @media(max-width:520px) {
   .google-login-card { background:rgba(255,255,255,.72); }
   .google-school-cta { padding:12px !important; }
+  .school-brand-logo-frame { width:min(48vw,150px); height:44px; }
 }
 .skip-answer { margin-top:14px; padding:13px; background:var(--card2); border-radius:12px; font-weight:700; }
 .unknown-btn,.grade-mobile-btn { min-height:52px; border-radius:14px; border:1px solid var(--border); background:var(--card,#fff); color:var(--text); font:700 15px/1.4 system-ui,sans-serif; cursor:pointer; padding:12px; }.grade-mobile-btn { color:#fff; background:var(--gold2); border-color:var(--gold2); }.quiz-bottom-actions [hidden] { display:none !important; }
@@ -6074,8 +6092,8 @@ body.page-scrolled .app-header { min-height:58px; padding-block:9px; background:
 .google-login-separator::before,.google-login-separator::after { height:1px; flex:1; background:#dadce0; content:''; }
 .google-login-message { min-height:22px; margin:15px 0 0; color:#5f6368; font-size:13px; line-height:1.5; }
 .google-login-message.error { color:#b3261e; }
-.school-login-logo { display:grid; place-items:center; min-height:90px; margin:8px auto 18px; }
-.school-login-logo img { display:block; max-width:min(100%,300px); max-height:110px; object-fit:contain; }
+.school-login-logo { display:grid; place-items:center; width:100%; height:56px; margin:8px auto 18px; overflow:hidden; }
+.school-login-logo img { display:block; width:100%; height:100%; max-width:100%; max-height:100%; padding:4px 10px; object-fit:contain; }
 .google-login-footer { padding-top:18px; color:#5f6368; font-size:12px; text-align:center; }
 @media(max-width:520px) { .google-login-page { display:block; padding:20px 0 12px; background:#fff; } .google-login-card { padding:28px 22px 24px; border:0; border-radius:0; box-shadow:none; } .google-login-footer { padding:18px; } }
 /* Login markup uses shared legacy class names for the step/form elements. */

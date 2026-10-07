@@ -2615,15 +2615,21 @@ function getCachedSchoolLogo(code = getSchoolCode()) {
   if (!code) return '';
   try {
     const value = localStorage.getItem(SCHOOL_LOGO_KEY_PREFIX + normalizeSchoolCode(code)) || '';
-    return value.length <= 260000 && /^data:image\/webp;base64,[A-Za-z0-9+/]+=*$/.test(value) ? value : '';
+    return isSupportedSchoolLogo(value) ? value : '';
   } catch (e) { return ''; }
+}
+
+function isSupportedSchoolLogo(value) {
+  return typeof value === 'string'
+    && value.length <= 260000
+    && /^data:image\/(?:webp|png|jpeg);base64,[A-Za-z0-9+/]+=*$/.test(value);
 }
 
 function cacheSchoolLogo(code, value) {
   const normalized = normalizeSchoolCode(code);
   if (!normalized) return;
   try {
-    if (typeof value === 'string' && value.length <= 260000 && /^data:image\/webp;base64,[A-Za-z0-9+/]+=*$/.test(value)) {
+    if (isSupportedSchoolLogo(value)) {
       localStorage.setItem(SCHOOL_LOGO_KEY_PREFIX + normalized, value);
     } else {
       localStorage.removeItem(SCHOOL_LOGO_KEY_PREFIX + normalized);
@@ -2633,14 +2639,25 @@ function cacheSchoolLogo(code, value) {
 
 function renderSchoolBranding() {
   const title = document.querySelector('.app-header .header-title');
+  const subtitle = document.querySelector('.app-header .header-sub');
   if (!title) return;
   const logo = getCachedSchoolLogo();
   if (logo) {
-    title.innerHTML = `<img class="school-brand-logo" src="${logo}" alt="${escapeHtml(getSchoolName() || '学校ロゴ')}">`;
+    title.replaceChildren();
+    const frame = document.createElement('span');
+    frame.className = 'school-brand-logo-frame';
+    const image = document.createElement('img');
+    image.className = 'school-brand-logo';
+    image.src = logo;
+    image.alt = getSchoolName() || '学校ロゴ';
+    frame.appendChild(image);
+    title.appendChild(frame);
     title.setAttribute('aria-label', getSchoolName() || '学校ロゴ');
+    if (subtitle) subtitle.hidden = true;
   } else {
     title.textContent = 'シス単マスター';
     title.removeAttribute('aria-label');
+    if (subtitle) subtitle.hidden = false;
   }
 }
 
