@@ -76,44 +76,6 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    // 学校単位の学習通知。所属学校の認証済みユーザーだけ閲覧可。
-    // 生徒からの通知の偽造を防ぐため、作成はCloud Functionsのみ。
-    match /schoolNotices/{noticeId} {
-      allow read: if signedIn()
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.schoolCode == resource.data.schoolId;
-      allow write: if false;
-    }
-
-    // 管理者が設定する定期通知とテスト前日通知。
-    match /studySchedules/{scheduleId} {
-      allow read, write: if isAdmin();
-    }
-
-    // インストール済みPWA通知用トークン。
-    match /pushTokens/{clientId} {
-      allow create, update: if signedIn()
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.clientId == clientId
-        && request.resource.data.installedOnly == true
-        && request.resource.data.token is string
-        && request.resource.data.token.size() > 20
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && request.resource.data.schoolId
-          == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.schoolCode;
-      allow read, delete: if isAdmin();
-    }
-
-    // 管理者が通知送信を予約するコレクション。
-    match /pushNotifications/{noticeId} {
-      allow read: if isAdmin();
-      allow create: if isAdmin()
-        && request.resource.data.title is string
-        && request.resource.data.body is string
-        && request.resource.data.target == 'installed';
-      allow update, delete: if isAdmin();
-    }
-
     // ユーザープロフィール。
     // 本人は通常プロフィールのみ変更可。role / disabledInApp / note は管理者のみ変更可。
     // 先生は所属学校のプロフィールだけ閲覧可能。
@@ -132,9 +94,11 @@ service cloud.firestore {
       allow delete: if isAdmin() || isOwner(uid);
     }
 
-    // ランキング。ログイン済みは閲覧可。自分のランキングだけ作成・更新可。管理者は変更可。
+    // ランキングは所属学校が一致する利用者だけ閲覧可。管理者は全件閲覧可。
     match /rankings/{uid} {
-      allow read: if signedIn();
+      allow read: if isAdmin() || (signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && resource.data.schoolCode == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.schoolCode);
       allow create, update: if isOwner(uid) || isAdmin();
       allow delete: if isOwner(uid) || isAdmin();
     }
