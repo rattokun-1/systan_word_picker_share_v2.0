@@ -202,8 +202,14 @@
       event.preventDefault();
       const email = $('email-input').value.trim();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        showMessage('有効なメールアドレスを入力してください。', true);
-        $('email-input').focus();
+        const schoolId = normalizeCode(email);
+        if (!schoolId) {
+          showMessage('メールアドレスまたは学校IDを入力してください。', true);
+          $('email-input').focus();
+          return;
+        }
+        $('school-id-input').value = schoolId;
+        $('school-form').requestSubmit();
         return;
       }
       const button = $('email-form').querySelector('button[type="submit"]');
