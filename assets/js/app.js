@@ -5753,11 +5753,16 @@ window.addEventListener('beforeunload', () => {
   buildBottomNav();
   let previousScrollY = window.scrollY;
   let scrollFramePending = false;
+  const updateScrollChrome = () => {
+    document.body.classList.toggle('page-scrolled', window.scrollY > 24);
+  };
+  updateScrollChrome();
   window.addEventListener('scroll', () => {
     if (scrollFramePending) return;
     scrollFramePending = true;
     requestAnimationFrame(() => {
       const currentY = window.scrollY;
+      updateScrollChrome();
       const nav = document.getElementById('mobile-bottom-nav');
       if (nav && window.matchMedia('(max-width: 700px)').matches && !document.body.classList.contains('is-quiz-active')) {
         if (currentY > 90 && currentY > previousScrollY + 8) nav.classList.add('compact');
