@@ -1,5 +1,5 @@
 /* シス単マスター PWA Service Worker */
-const CACHE_VERSION = '20261010-performance-v3.2';
+const CACHE_VERSION = '20261010-account-glass-v3.4';
 const CACHE_NAME = 'systan-master-' + CACHE_VERSION;
 
 const APP_SHELL = [
