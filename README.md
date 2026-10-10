@@ -49,7 +49,7 @@ python -m http.server 8000
 1. Firebase Console でWebアプリを登録し、Authentication の使用するログイン方法（Google、メール／パスワード、学校ID利用時に必要な匿名認証）と承認済みドメインを確認します。
 2. Firestoreを用意し、`firestore.rules` の内容を**対象プロジェクトを確認してから**適用します。学校IDやクラス、学校別テスト範囲は管理者による登録が必要です。
 
-このリポジトリの `firebase.json` でFirestoreルールを配置できます。対象プロジェクトを指定して `firebase deploy --only firestore:rules --project <PROJECT_ID>` を実行してください。静的サイトの配信先は別途設定します。メールログインはCloud Functionsのメール照会を使わず、メール入力後にパスワード画面へ進みます。
+共有データベースのFirestoreルールは古文リポジトリ（rattokun-1/kobun.dashcloudly.com）からのみ配置します。英単語側のfirebase.jsonにはFirestore配置定義を持たせません。古文リポジトリで対象プロジェクトを指定して `firebase deploy --only firestore:rules --project <PROJECT_ID>` を実行してください。静的サイトの配信先は別途設定します。メールログインはCloud Functionsのメール照会を使わず、メール入力後にパスワード画面へ進みます。
 
 ## GitHubで公開する前に
 
