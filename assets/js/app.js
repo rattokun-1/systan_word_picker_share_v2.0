@@ -196,7 +196,7 @@ function playFinishSound() {
 // =========================================================
 // OFFLINE CACHE / DATA SAVER
 // =========================================================
-const APP_CACHE_VERSION = '2026.10.10-performance-v3.2';
+const APP_CACHE_VERSION = '2026.10.10-security-v3.3';
 
 async function registerOfflineCache() {
   if (!('serviceWorker' in navigator)) return;
@@ -3223,7 +3223,7 @@ async function loadIssuedSchoolCodes() {
       const active = data.active !== false;
       return `<div class="school-code-item">
         <div><div class="school-code-main">${escapeHtml(doc.id)}</div><div class="school-code-sub">${escapeHtml(data.schoolName || '学校名なし')} ／ ${active ? '有効' : '停止中'}</div></div>
-        <button class="school-small-btn" onclick="toggleSchoolCodeActive('${escapeHtml(doc.id)}', ${active ? 'false' : 'true'})">${active ? '停止' : '有効化'}</button>
+        <button class="school-small-btn" onclick="toggleSchoolCodeActive(${escapeHtml(JSON.stringify(doc.id))}, ${active ? 'false' : 'true'})">${active ? '停止' : '有効化'}</button>
       </div>`;
     }).join('');
   } catch (e) {
@@ -3370,9 +3370,9 @@ function renderAdminUserRows(rows) {
       </div>
       </details>
       <div class="admin-user-actions">
-        <button class="btn btn-primary" onclick="saveAdminUserProfile('${uid}')">変更を保存</button>
-        <button class="btn btn-secondary" onclick="toggleAdminUserSuspended('${uid}', ${suspended ? 'false' : 'true'})">${suspended ? '利用停止を解除' : '利用停止にする'}</button>
-        <button class="school-small-btn danger" onclick="deleteAdminUserAppData('${uid}')">アプリ情報を削除</button>
+        <button class="btn btn-primary" onclick="saveAdminUserProfile(${escapeHtml(JSON.stringify(row.id || row.uid || ""))})">変更を保存</button>
+        <button class="btn btn-secondary" onclick="toggleAdminUserSuspended(${escapeHtml(JSON.stringify(row.id || row.uid || ""))}, ${suspended ? 'false' : 'true'})">${suspended ? '利用停止を解除' : '利用停止にする'}</button>
+        <button class="school-small-btn danger" onclick="deleteAdminUserAppData(${escapeHtml(JSON.stringify(row.id || row.uid || ""))})">アプリ情報を削除</button>
       </div>
     </div>`;
   }).join('');
@@ -3411,8 +3411,9 @@ async function saveAdminUserProfile(uid) {
       updatedByEmail: auth.currentUser.email || '',
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
-    await db.collection('users').doc(safeUid).set(payload, { merge: true });
-    await db.collection('rankings').doc(safeUid).set({
+    const batch = db.batch();
+    batch.set(db.collection('users').doc(safeUid), payload, { merge: true });
+    batch.set(db.collection('rankings').doc(safeUid), {
       nickname: nickname || null,
       name: nickname || null,
       schoolCode: schoolCode || null,
@@ -3420,6 +3421,8 @@ async function saveAdminUserProfile(uid) {
       updatedByUid: auth.currentUser.uid,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
+    batch.set(db.collection('securityAudit').doc(), { actorUid: auth.currentUser.uid, action: 'profile-role-update', targetUid: safeUid, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    await batch.commit();
     showSyncStatus('ユーザー情報を保存しました');
     await loadAdminDashboard();
   } catch (e) {
@@ -3436,13 +3439,19 @@ async function toggleAdminUserSuspended(uid, disabled) {
   const safeUid = String(uid || '').trim();
   if (!safeUid) return;
   try {
-    await db.collection('users').doc(safeUid).set({
+    const batch = db.batch();
+    batch.set(db.collection('users').doc(safeUid), {
       disabledInApp: !!disabled,
       disabledUpdatedByUid: auth.currentUser.uid,
       disabledUpdatedByEmail: auth.currentUser.email || '',
       disabledUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
-    await db.collection('rankings').doc(safeUid).set({ disabledInApp: !!disabled }, { merge: true });
+    batch.set(db.collection(RANKINGS_COLLECTION).doc(safeUid), { disabledInApp: !!disabled }, { merge: true });
+    batch.set(db.collection('securityAudit').doc(), {
+      actorUid: auth.currentUser.uid, action: disabled ? 'suspend' : 'unsuspend', targetUid: safeUid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await batch.commit();
     showSyncStatus(disabled ? 'ユーザーを利用停止にしました' : '利用停止を解除しました');
     await loadAdminDashboard();
   } catch (e) {
@@ -3486,6 +3495,9 @@ async function enforceUserSuspendedState(user) {
     hideSuspendedOverlay();
   } catch (e) {
     console.warn('enforceUserSuspendedState error:', e);
+    showSyncStatus('利用状態を確認できません。再接続してログインしてください。', true);
+    await auth.signOut();
+    return true;
   }
   return false;
 }
@@ -3593,8 +3605,8 @@ async function loadAdminDashboard() {
                 <div class="school-code-sub">${escapeHtml(row.schoolName || '学校名なし')} ／ 参加者 ${count}人</div>
               </div>
               <div class="admin-code-actions">
-                <button class="school-small-btn" onclick="toggleSchoolCodeActive('${escapeHtml(row.id)}', ${active ? 'false' : 'true'}).then(loadAdminDashboard)">${active ? '停止' : '有効化'}</button>
-                <button class="school-small-btn danger" onclick="deleteSchoolCode('${escapeHtml(row.id)}')">削除</button>
+                <button class="school-small-btn" onclick="toggleSchoolCodeActive(${escapeHtml(JSON.stringify(row.id))}, ${active ? 'false' : 'true'}).then(loadAdminDashboard)">${active ? '停止' : '有効化'}</button>
+                <button class="school-small-btn danger" onclick="deleteSchoolCode(${escapeHtml(JSON.stringify(row.id))})">削除</button>
               </div>
             </div>`;
           }).join('') : '<div class="school-muted admin-empty">まだ発行済みコードはありません。</div>'}
